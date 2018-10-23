@@ -19,6 +19,8 @@ from tensorflow.contrib import slim as slim
 1.看能否把GridLSTM实现下
 2.将数据处理弄好，这样才有针对性的进行实验
 """
+"""
+"""
 
 
 #导入相应的数据处理
