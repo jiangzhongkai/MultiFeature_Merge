@@ -127,6 +127,19 @@ class DataProcessing(object):
             print(temp)
             df_1.to_csv(str(i)+".csv",index=False)
 
+    @classmethod
+    def class_method(cls):
+        """
+        :return:
+        """
+
+    @staticmethod
+    def static_method():
+        """"
+        静态方法无默认参数
+        """
+        pass
+
     #现在合并这块出了点问题，等过段时间再弄。
     def  merge_csv_by_same_MeasureTime(self,merge_file,on=['measureTime'],how="outer",org_csv=[]):
         """
@@ -160,7 +173,7 @@ def main():
     # list_csv=os.listdir("Data_Pro")
     # dp.mul_rename_col_name(col_old_name="measureData",col_new_name=col_names_english)
     # dp.merge_csv_by_same_MeasureTime("merge.csv",on=['measureTime'],how="left",org_csv=["a18.csv","a19.csv"])
-    org_csv=["a20.csv","a21.csv","a22.csv","a23.csv","a24.csv","a25.csv"]
+    org_csv=["a27.csv"]
     temp_file=pd.read_csv("Data_Pro/"+org_csv[0])
     temp_file.drop_duplicates(['measureTime'],inplace=True)
     temp_file=pd.DataFrame(temp_file)
