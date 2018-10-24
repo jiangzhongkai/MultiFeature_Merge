@@ -20,6 +20,7 @@ col_names_english = ["air_temp", "air_humidity", "land_temp", "land_humidity", "
                      "land_hum-5cm", \
                      "land_temp-15cm", "land_hum-15cm", "land_temp-35cm", "land_hum-35cm", "water_temp", "water_PH"]
 
+
 class Config(object):
     """
     中文到英文字段的映射
@@ -37,7 +38,7 @@ class DataProcessing(object):
     数据处理的类，主要是用于来处理数据的查询，清洗
     """
     def __init__(self):
-        self.path="Data_Orginal"
+        self.path="Data_Orginal/"
 
     def merge_data(self,list_csv=[]):
         """
@@ -61,7 +62,6 @@ class DataProcessing(object):
             df.to_csv("process_data.csv",index=False)
         return " merge data has been succed"
 
-
     def get_csv_by_TargetId(self,data):
         """
         将同一targetId的数据放在一起，这样形成不同的字段，并生成多个csv文件。
@@ -75,7 +75,7 @@ class DataProcessing(object):
 
         print("get data successfully.")
 
-    def  set_colNames(self,data,col_names=[]):
+    def  set_col_Names(self,data,col_names=[]):
         """
         设置列属性
         :param data:
@@ -112,13 +112,6 @@ class DataProcessing(object):
         for i,name in zip(range(1,28,1),col_new_name):
             self.single_rename_col_name(data="Data_Pro/"+str(i)+".csv",col_old_name=col_old_name,col_new_name=name)
 
-
-    def initial_state(self):
-        """
-        返回初始化状态
-        :return:
-        """
-
     def process_time(self):
         """
         将时间属性秒后面的小数点去掉，然后再将数据保存起来
@@ -134,7 +127,8 @@ class DataProcessing(object):
             print(temp)
             df_1.to_csv(str(i)+".csv",index=False)
 
-    def  merge_csv_by_MeasureTime(self,merge_file,on=['measureTime'],how="outer",from_csv=[]):
+    #现在合并这块出了点问题，等过段时间再弄。
+    def  merge_csv_by_same_MeasureTime(self,merge_file,on=['measureTime'],how="outer",org_csv=[]):
         """
         通过时间特征将多个csv文件放在一起
         :param merge_file:
@@ -143,38 +137,42 @@ class DataProcessing(object):
         :param from_csv：
         :return:
         """
-        pd.read_csv("Data_Pro/a1.csv").to_csv("Data_Pro/"+merge_file)
-        for i in range(2,len(from_csv),1):
-            df=pd.read_csv("Data_Pro/a"+str(i)+".csv")
-            df=pd.DataFrame(df)
-            merge=pd.read_csv("Data_Pro/"+merge_file)
-            merge=pd.DataFrame(merge)
-            pd.merge(merge,df,on=on,how=how).to_csv("Data_Pro/"+merge_file,index=False)
-        print("merge finished.")
-
-    #真正的调用函数
-    def __call__(self, *args, **kwargs):
-        pass
+        if len(org_csv)==0:
+            raise ValueError("No file input.")
+        elif len(org_csv)==1:
+            print("there is no file need to merge.")
+        else:
+            temp_file=pd.read_csv("Data_Pro/"+org_csv[0],low_memory=False)
+            temp_file.drop_duplicates(inplace=True)
+            temp_file.to_csv("Data_Pro/"+merge_file,index=False)
+            for i in range(1,len(org_csv),1):
+                temp_file_1=pd.read_csv("Data_Pro/"+org_csv[i],low_memory=False)
+                temp_file_1.drop_duplicates(inplace=True)
+                temp_file=pd.DataFrame(temp_file_1)
+                merge_file=pd.read_csv("Data_Pro/"+merge_file,low_memory=False)
+                merge_file=pd.DataFrame(merge_file)
+                pd.merge(merge_file,temp_file_1,how=how,on=on).to_csv("Data_Pro/"+merge_file,index=False)
 
 #主函数
 def main():
     # 常量设置
     dp=DataProcessing()
-    list_csv=os.listdir("Data_Pro")
+    # list_csv=os.listdir("Data_Pro")
     # dp.mul_rename_col_name(col_old_name="measureData",col_new_name=col_names_english)
-    # dp.merge_csv_by_MeasureTime("merge.csv",on=['measureTime'],how="outer",from_csv=list_csv)
-    # for i in range(3,28,1):
-    #     df = pd.read_csv("Data_Pro/"+str(i)+".csv")
-    #     df = pd.DataFrame(df)
-    #     merge = pd.read_csv("Data_Pro/merge.csv")
-    #     merge = pd.DataFrame(merge)
-    #     merge_1 = pd.merge(merge, df, on=['measureTime'], how="outer")
-    #     merge_1.to_csv("Data_Pro/merge.csv", index=False)
-    # dp.process_time()
-    # for i in range(1,28,1):
-    #     df = pd.read_csv(str(i)+".csv")
-    #     df.sort_values(by='measureTime').to_csv('a'+str(i)+'.csv', index=False)
-    print(pd.read_csv("Data_Pro/merge.csv"))
+    # dp.merge_csv_by_same_MeasureTime("merge.csv",on=['measureTime'],how="left",org_csv=["a18.csv","a19.csv"])
+    org_csv=["a20.csv","a21.csv","a22.csv","a23.csv","a24.csv","a25.csv"]
+    temp_file=pd.read_csv("Data_Pro/"+org_csv[0])
+    temp_file.drop_duplicates(['measureTime'],inplace=True)
+    temp_file=pd.DataFrame(temp_file)
+    temp_file.to_csv("Data_Pro/merge.csv",index=False)
+    for i in range(1,len(org_csv),1):
+        temp_file_1=pd.read_csv("Data_Pro/"+org_csv[i])
+        temp_file_1.drop_duplicates(['measureTime'],inplace=True)
+        temp_file_1=pd.DataFrame(temp_file_1)
+        merge=pd.read_csv("Data_Pro/merge.csv")
+        merge.drop_duplicates(['measureTime'],inplace=True)
+        merge=pd.DataFrame(merge)
+        pd.merge(merge,temp_file_1,how="inner",on=['measureTime']).to_csv("Data_Pro/merge.csv",index=False)
 
 if __name__=="__main__":
     main()
