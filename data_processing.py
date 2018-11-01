@@ -1,15 +1,21 @@
 """-*- coding: utf-8 -*-
  DateTime   : 2018/9/2 16:03
  Author  : Peter_Bonnie
- FileName    : Beijing_LSTM
+ FileName: data_processing.py
  Software: PyCharm
 """
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 """
+DEA数据的编写
 """
+
+pre_path="Data/"
+
 class Data_Processing():
     """
     数据处理类
@@ -22,22 +28,24 @@ class Data_Processing():
     def parse(x):
         return datetime.strptime(x,'%Y %m %d %H')
 
-    def count_0_num(self,data,pop_feat):
+    def count_0_num(self,data,pop_feat=None):
         """
-        计算csv文件中除了时间以外所有特征全为0的数量
+        计算并返回csv文件中除了时间以外所有特征全为0的数量,以及等于0值的索引
         :param data:
-        :param pop_feat
+        :param pop_feat:需要剔除的特征
         :return:
         """
         if isinstance(data,list):
-            count={}
+            count=dict()
+            index=dict()
         else:
             count=0
-
+            index=[]
         bool = False
         if not isinstance(data,list):
-            tem_data = pd.read_csv(data)
-            tem_data.pop(pop_feat)
+            tem_data = pd.read_csv(pre_path+data)
+            if pop_feat is not None:
+               tem_data.pop(pop_feat)
             for i in range(tem_data.shape[0]):
                 for col in tem_data.columns:
                     if tem_data.iloc[i][col] == 0:
@@ -47,23 +55,28 @@ class Data_Processing():
                         break
                 if bool is True:
                     count += 1
+                    index.append(i)
+
         else:
             #获得每个数据集里面的为0的个数
             for path in data:
                 temp_path=path.split('.')[0]
-                tem_data=pd.read_csv(path)
+                index[temp_path]=[]
                 count[temp_path]=0
-                tem_data.pop(pop_feat)
-                for i in range(tem_data.shape[0]):
-                    for col in tem_data.columns:
-                        if tem_data.iloc[i][col]==0:
+                temp_data=pd.read_csv(pre_path+path)
+                if pop_feat is not None:
+                    temp_data.pop(pop_feat)
+                for i in range(temp_data.shape[0]):
+                    for col in temp_data.columns:
+                        if temp_data.iloc[i][col]==0:
                             bool=True
                         else:
                             bool=False
                             break
                     if bool is True:
                         count[temp_path]+=1
-        return count
+                        index[temp_path].append(i)
+        return count,index
 
     def fill_anomaly_data(self,data):
         """
@@ -99,11 +112,12 @@ class Data_Processing():
         evening_dataset_2 = data[(data['measureTime'].map(lambda x: x.split(' ')[1]) >= '00:00:00')
                                  & (data['measureTime'].map(lambda x: x.split(' ')[1]) <= '06:00:00')]
 
+        # 将晚上的数据集拼接在一起
         evening_dataset = np.concatenate([evening_dataset_1, evening_dataset_2], axis=0)
 
-        # 去掉值全为0的数据
-
+        #to do in this place
         # 对异常值进行处理
+        #to do in this place
         morning_dataset.to_csv("morning.csv", index=False)
         shangwu_dataset.to_csv("shangwu.csv", index=False)
         afternoon_dataset.to_csv("afternoon.csv", index=False)
@@ -111,6 +125,22 @@ class Data_Processing():
         evening_dataset_2.to_csv("evening_2.csv", index=False)
 
         return morning_dataset, shangwu_dataset, afternoon_dataset, evening_dataset
+
+    def del_0_value(self,data,pop_feat):
+        """
+        删除0值所在的索引
+        :param data:
+        :return:
+        """
+        _,index=self.count_0_num(data,pop_feat=pop_feat)
+        print(index)
+        if len(index)==0:
+            pass
+        else:
+            temp_data=pd.read_csv(pre_path+data)
+            temp_data.drop(axis=0,index=index,inplace=True)
+            temp_data.to_csv(data,index=False)
+
 
     def load_dataset(self,data):
         """
@@ -211,14 +241,6 @@ class Data_Processing():
 
 if __name__=='__main__':
     dp=Data_Processing()
-    count=dp.count_0_num(['morning.csv','shangwu.csv','afternoon.csv','evening_dataset.csv'],'measureTime')
-    print(count)
-    del count
-    count=dp.count_0_num('morning.csv','measureTime')
-    print(count)
-
-
-
-
-
+    # dp.count_0_num(["morning.csv","shangwu.csv","afternoon.csv"],"measureTime")
+    dp.del_0_value("evening_dataset.csv",'measureTime')
 
